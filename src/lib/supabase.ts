@@ -3,11 +3,17 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase env vars. Check .env for VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
-}
+// Ne pas lever d'exception au chargement du module : cela empêcherait React
+// de s'afficher et produirait une page blanche muette. On expose plutôt un
+// indicateur, et main.tsx affiche un écran d'aide explicite si la config manque.
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Valeurs de repli pour éviter que createClient ne jette quand la config est
+// absente : ce client fictif n'est jamais utilisé (l'écran d'aide est affiché).
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-anon-key',
+  {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
