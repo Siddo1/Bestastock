@@ -11,7 +11,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Repère de secours : visible tant que React n'a pas pris la main.
+           S'il reste affiché, c'est que le JavaScript ne s'exécute pas. -->
+      <div style="font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #64748b;">
+        <div style="text-align: center;">
+          <div style="font-size: 18px; font-weight: 700; color: #0f172a;">Besta Solar</div>
+          <div style="margin-top: 8px; font-size: 14px;">Chargement de l'application… <span style="opacity: .55;">(build v4)</span></div>
+          <noscript>Veuillez activer JavaScript pour utiliser cette application.</noscript>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
