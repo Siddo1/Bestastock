@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     <meta name="theme-color" content="#f57c0b" />
     <title>Besta Solar — Gestion de Stock</title>
+    <script>
+      // Capteur d'erreurs : affiche à l'écran toute erreur de chargement,
+      // pour diagnostiquer sans ouvrir la console du navigateur.
+      (function () {
+        function show(title, detail) {
+          var r = document.getElementById('root')
+          if (!r) return
+          r.innerHTML =
+            '<div style="font-family:system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">' +
+            '<div style="max-width:640px;border:1px solid #fecaca;background:#fef2f2;border-radius:12px;padding:20px;color:#b91c1c">' +
+            '<div style="font-weight:700;margin-bottom:8px">' + title + '</div>' +
+            '<pre style="white-space:pre-wrap;word-break:break-word;font-size:12px;margin:0">' + detail + '</pre></div></div>'
+        }
+        window.addEventListener('error', function (e) {
+          show('Erreur au chargement (build v5)', (e.message || '') + '\n' + (e.filename || '') + (e.lineno ? ':' + e.lineno : ''))
+        })
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason
+          show('Erreur (promesse) (build v5)', (r && (r.message || r.toString())) || String(r))
+        })
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -17,7 +39,7 @@
       <div style="font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #64748b;">
         <div style="text-align: center;">
           <div style="font-size: 18px; font-weight: 700; color: #0f172a;">Besta Solar</div>
-          <div style="margin-top: 8px; font-size: 14px;">Chargement de l'application… <span style="opacity: .55;">(build v4)</span></div>
+          <div style="margin-top: 8px; font-size: 14px;">Chargement de l'application… <span style="opacity: .55;">(build v5)</span></div>
           <noscript>Veuillez activer JavaScript pour utiliser cette application.</noscript>
         </div>
       </div>
