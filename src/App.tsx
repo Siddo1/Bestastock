@@ -19,6 +19,7 @@ import PurchaseForm from './pages/PurchaseForm'
 import Transfers from './pages/Transfers'
 import TransferForm from './pages/TransferForm'
 import Users from './pages/Users'
+import ImportProducts from './pages/ImportProducts'
 import Boutiques from './pages/Boutiques'
 import Reports from './pages/Reports'
 import AuditLog from './pages/AuditLog'
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/products/new" element={<ProductForm />} />
         <Route path="/products/:id/edit" element={<ProductForm />} />
+        <Route path="/import" element={<ImportProducts />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/new" element={<CustomerForm />} />

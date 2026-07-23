@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Boxes, Users, ShoppingCart, Receipt,
   Truck, ArrowLeftRight, Store, UserCog, FileBarChart, ScrollText,
-  LogOut, Menu, X, Sun, ChevronDown,
+  LogOut, Menu, X, Sun, ChevronDown, Upload,
 } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { cn, getInitials } from '../lib/utils'
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/', label: 'Tableau de bord', icon: LayoutDashboard, roles: ['admin', 'manager'] },
   { to: '/pos', label: 'Point de vente', icon: ShoppingCart, roles: ['admin', 'manager'] },
   { to: '/products', label: 'Produits', icon: Package, roles: ['admin', 'manager'] },
+  { to: '/import', label: 'Importer', icon: Upload, roles: ['admin'] },
   { to: '/stock', label: 'Stock', icon: Boxes, roles: ['admin', 'manager'] },
   { to: '/customers', label: 'Clients', icon: Users, roles: ['admin', 'manager'] },
   { to: '/sales', label: 'Ventes', icon: Receipt, roles: ['admin', 'manager'] },
