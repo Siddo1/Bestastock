@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, X, Plus, Trash2 } from 'lucide-react'
-import { supabase, Category, Supplier } from '../lib/supabase'
+import { ArrowLeft, Save, Loader2, X, Plus, Trash2, Store } from 'lucide-react'
+import { supabase, Category, Supplier, Boutique } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { logAudit } from '../lib/audit'
 import { PageHeader, Spinner, ConfirmDialog } from '../components/ui'
@@ -21,6 +21,9 @@ export default function ProductForm() {
   const [error, setError] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [boutiques, setBoutiques] = useState<Boutique[]>([])
+  const [stockQty, setStockQty] = useState<Record<string, string>>({})
+  const [origStock, setOrigStock] = useState<Record<string, number>>({})
 
   const [form, setForm] = useState({
     sku: '',
@@ -44,12 +47,26 @@ export default function ProductForm() {
   }, [id])
 
   const loadData = async () => {
-    const [cats, sups] = await Promise.all([
+    const [cats, sups, bts] = await Promise.all([
       supabase.from('categories').select('*').order('name'),
       supabase.from('suppliers').select('*').order('name'),
+      supabase.from('boutiques').select('*').eq('is_active', true).order('name'),
     ])
     setCategories((cats.data as Category[]) ?? [])
     setSuppliers((sups.data as Supplier[]) ?? [])
+    setBoutiques((bts.data as Boutique[]) ?? [])
+
+    if (isEdit && id) {
+      const { data: stockRows } = await supabase.from('stock_items').select('boutique_id, quantity').eq('product_id', id)
+      const qmap: Record<string, string> = {}
+      const omap: Record<string, number> = {}
+      ;((stockRows as { boutique_id: string; quantity: number }[]) ?? []).forEach((s) => {
+        qmap[s.boutique_id] = String(s.quantity)
+        omap[s.boutique_id] = s.quantity
+      })
+      setStockQty(qmap)
+      setOrigStock(omap)
+    }
 
     if (isEdit && id) {
       const { data } = await supabase.from('products').select('*').eq('id', id).maybeSingle()
@@ -107,12 +124,38 @@ export default function ProductForm() {
       if (result.data) await logAudit('create', 'products', result.data.id, null, result.data)
     }
 
-    setSaving(false)
-    if (result.error) {
-      setError(result.error.message)
-    } else {
-      navigate('/products')
+    if (result.error || !result.data) {
+      setSaving(false)
+      setError(result.error?.message ?? 'Erreur lors de l\'enregistrement.')
+      return
     }
+
+    // Répartition du stock par boutique (admin)
+    if (isAdmin) {
+      const productId = result.data.id
+      for (const b of boutiques) {
+        const target = Number(stockQty[b.id] || '') || 0
+        const orig = origStock[b.id] ?? 0
+        if (target === orig) continue
+        const { data: existing } = await supabase.from('stock_items').select('id').eq('product_id', productId).eq('boutique_id', b.id).maybeSingle()
+        if (existing) {
+          await supabase.from('stock_items').update({ quantity: target, updated_at: new Date().toISOString() }).eq('id', existing.id)
+        } else {
+          await supabase.from('stock_items').insert({ product_id: productId, boutique_id: b.id, quantity: target })
+        }
+        await supabase.from('stock_movements').insert({
+          product_id: productId,
+          boutique_id: b.id,
+          quantity: target - orig,
+          movement_type: 'adjustment',
+          notes: 'Répartition (fiche produit)',
+          performed_by: profile?.id,
+        })
+      }
+    }
+
+    setSaving(false)
+    navigate('/products')
   }
 
   const handleDelete = async () => {
@@ -234,6 +277,31 @@ export default function ProductForm() {
             </div>
           )}
         </div>
+
+        {isAdmin && boutiques.length > 0 && (
+          <div className="border-t border-neutral-100 pt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Store className="w-4 h-4 text-neutral-500" />
+              <label className="label mb-0">Stock par boutique</label>
+            </div>
+            <p className="text-xs text-neutral-500 mb-3">Quantité disponible dans chaque boutique pour ce produit.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {boutiques.map((b) => (
+                <div key={b.id}>
+                  <label className="text-xs font-medium text-neutral-600">{b.name}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="input mt-1"
+                    placeholder="0"
+                    value={stockQty[b.id] ?? ''}
+                    onChange={(e) => setStockQty({ ...stockQty, [b.id]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && <div className="text-sm text-error-600 bg-error-50 border border-error-200 rounded-lg p-3">{error}</div>}
 

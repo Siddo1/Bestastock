@@ -20,6 +20,7 @@ import Transfers from './pages/Transfers'
 import TransferForm from './pages/TransferForm'
 import Users from './pages/Users'
 import ImportProducts from './pages/ImportProducts'
+import StockAllocation from './pages/StockAllocation'
 import Boutiques from './pages/Boutiques'
 import Reports from './pages/Reports'
 import AuditLog from './pages/AuditLog'
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/products/:id/edit" element={<ProductForm />} />
         <Route path="/import" element={<ImportProducts />} />
         <Route path="/stock" element={<Stock />} />
+        <Route path="/repartition" element={<StockAllocation />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/new" element={<CustomerForm />} />
         <Route path="/customers/:id" element={<CustomerDetail />} />
