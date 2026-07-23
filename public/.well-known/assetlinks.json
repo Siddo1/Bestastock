@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.bestastock.twa",
+      "sha256_cert_fingerprints": ["45:5C:43:FA:4A:CA:6A:5F:B1:18:2E:85:14:09:47:6B:53:64:09:90:4E:EE:B0:5D:7D:9C:1A:3E:17:1F:AB:BE"]
+    }
+  }
+]
