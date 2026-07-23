@@ -5,6 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="/sun.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     <meta name="theme-color" content="#f57c0b" />
+    <!-- PWA / installation sur mobile -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Besta Solar" />
     <title>Besta Solar — Gestion de Stock</title>
     <script>
       // Capteur d'erreurs : affiche à l'écran toute erreur de chargement,
@@ -20,11 +26,11 @@
             '<pre style="white-space:pre-wrap;word-break:break-word;font-size:12px;margin:0">' + detail + '</pre></div></div>'
         }
         window.addEventListener('error', function (e) {
-          show('Erreur au chargement (build v5)', (e.message || '') + '\n' + (e.filename || '') + (e.lineno ? ':' + e.lineno : ''))
+          show('Erreur au chargement', (e.message || '') + '\n' + (e.filename || '') + (e.lineno ? ':' + e.lineno : ''))
         })
         window.addEventListener('unhandledrejection', function (e) {
           var r = e.reason
-          show('Erreur (promesse) (build v5)', (r && (r.message || r.toString())) || String(r))
+          show('Erreur', (r && (r.message || r.toString())) || String(r))
         })
       })()
     </script>
@@ -39,7 +45,7 @@
       <div style="font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #64748b;">
         <div style="text-align: center;">
           <div style="font-size: 18px; font-weight: 700; color: #0f172a;">Besta Solar</div>
-          <div style="margin-top: 8px; font-size: 14px;">Chargement de l'application… <span style="opacity: .55;">(build v5)</span></div>
+          <div style="margin-top: 8px; font-size: 14px; color: #64748b;">Chargement…</div>
           <noscript>Veuillez activer JavaScript pour utiliser cette application.</noscript>
         </div>
       </div>
