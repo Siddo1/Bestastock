@@ -17,7 +17,7 @@ type Row = {
   error?: string
 }
 
-type Result = { created: number; failed: number; stock: number; details: string[] }
+type Result = { created: number; skipped: number; failed: number; stock: number; details: string[] }
 
 // XOF n'a pas de décimales : on ne garde que les chiffres.
 // "80.000 F" -> 80000, "1 250" -> 1250
@@ -116,14 +116,23 @@ export default function ImportProducts() {
     if (valid.length === 0) return
     setImporting(true)
 
-    const { data: existing } = await supabase.from('products').select('sku')
-    const skuSet = new Set(((existing as { sku: string }[]) ?? []).map((p) => p.sku.toUpperCase()))
+    const { data: existing } = await supabase.from('products').select('sku, name')
+    const skuSet = new Set(((existing as { sku: string; name: string }[]) ?? []).map((p) => p.sku.toUpperCase()))
+    const nameSet = new Set(((existing as { sku: string; name: string }[]) ?? []).map((p) => p.name.trim().toLowerCase()))
     const cats = [...categories]
     const findCat = (name: string) => cats.find((c) => c.name.toLowerCase() === name.toLowerCase())
 
-    const res: Result = { created: 0, failed: 0, stock: 0, details: [] }
+    const res: Result = { created: 0, skipped: 0, failed: 0, stock: 0, details: [] }
 
     for (const r of valid) {
+      // Ignore un produit dont le nom existe déjà (évite les doublons)
+      const key = r.name.trim().toLowerCase()
+      if (nameSet.has(key)) {
+        res.skipped++
+        continue
+      }
+      nameSet.add(key)
+
       // Catégorie (créée si absente)
       let category_id: string | null = null
       if (r.category) {
@@ -209,6 +218,7 @@ export default function ImportProducts() {
           <p className="text-sm text-neutral-700 mt-2">
             <strong>{result.created}</strong> produit(s) créé(s)
             {result.stock > 0 && <> · <strong>{result.stock}</strong> unité(s) mises en stock à {boutiqueName}</>}
+            {result.skipped > 0 && <> · <span className="text-warning-700">{result.skipped} doublon(s) ignoré(s)</span></>}
             {result.failed > 0 && <> · <span className="text-error-600">{result.failed} échec(s)</span></>}
           </p>
           {result.details.length > 0 && (
