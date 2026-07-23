@@ -14,7 +14,7 @@ export default defineConfig({
         description: 'Gestion de stock et point de vente multi-boutiques',
         lang: 'fr',
         theme_color: '#f57c0b',
-        background_color: '#0f172a',
+        background_color: '#0a3482',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
