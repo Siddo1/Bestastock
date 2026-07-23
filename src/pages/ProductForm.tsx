@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, X, Plus } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, X, Plus, Trash2 } from 'lucide-react'
 import { supabase, Category, Supplier } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { logAudit } from '../lib/audit'
-import { PageHeader, Spinner } from '../components/ui'
+import { PageHeader, Spinner, ConfirmDialog } from '../components/ui'
 
 export default function ProductForm() {
   const { id } = useParams()
@@ -16,6 +16,8 @@ export default function ProductForm() {
 
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -111,6 +113,21 @@ export default function ProductForm() {
     } else {
       navigate('/products')
     }
+  }
+
+  const handleDelete = async () => {
+    if (!id) return
+    setError(null)
+    setDeleting(true)
+    const { data: old } = await supabase.from('products').select('*').eq('id', id).maybeSingle()
+    const { error: delErr } = await supabase.from('products').delete().eq('id', id)
+    if (delErr) {
+      setDeleting(false)
+      setError("Suppression impossible : ce produit est lié à des ventes ou des achats. Désactivez-le plutôt que de le supprimer.")
+      return
+    }
+    await logAudit('delete', 'products', id, old, null)
+    navigate('/products')
   }
 
   const addPhoto = () => {
@@ -220,14 +237,31 @@ export default function ProductForm() {
 
         {error && <div className="text-sm text-error-600 bg-error-50 border border-error-200 rounded-lg p-3">{error}</div>}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" className="btn-secondary" onClick={() => navigate('/products')}>Annuler</button>
-          <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isEdit ? 'Enregistrer' : 'Créer'}
-          </button>
+        <div className="flex justify-between items-center gap-2 pt-2">
+          {isEdit && isAdmin ? (
+            <button type="button" className="btn-danger" onClick={() => setConfirmDelete(true)} disabled={deleting}>
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Supprimer
+            </button>
+          ) : <span />}
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary" onClick={() => navigate('/products')}>Annuler</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isEdit ? 'Enregistrer' : 'Créer'}
+            </button>
+          </div>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        title="Supprimer ce produit ?"
+        message={`« ${form.name} » sera définitivement supprimé, ainsi que son stock associé. Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        danger
+      />
     </div>
   )
 }
