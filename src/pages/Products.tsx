@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Package, Pencil, Filter } from 'lucide-react'
+import { Plus, Search, Package, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { supabase, Product, Category, Supplier } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
-import { PageHeader, Spinner, EmptyState, Badge } from '../components/ui'
+import { logAudit } from '../lib/audit'
+import { PageHeader, Spinner, EmptyState, Badge, ConfirmDialog } from '../components/ui'
 import { formatXOF } from '../lib/utils'
 
 export default function Products() {
@@ -16,6 +17,10 @@ export default function Products() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
     load()
@@ -43,6 +48,47 @@ export default function Products() {
       return matchSearch && matchCat
     })
   }, [products, search, categoryFilter])
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const allShownSelected = filtered.length > 0 && filtered.every((p) => selected.has(p.id))
+  const toggleAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (allShownSelected) filtered.forEach((p) => next.delete(p.id))
+      else filtered.forEach((p) => next.add(p.id))
+      return next
+    })
+  }
+
+  const handleBulkDelete = async () => {
+    setDeleting(true)
+    setNotice(null)
+    const ids = [...selected]
+    let ok = 0
+    let failed = 0
+    for (const id of ids) {
+      const { data: old } = await supabase.from('products').select('*').eq('id', id).maybeSingle()
+      const { error } = await supabase.from('products').delete().eq('id', id)
+      if (error) { failed++; continue }
+      await logAudit('delete', 'products', id, old, null)
+      ok++
+    }
+    setDeleting(false)
+    setSelected(new Set())
+    setNotice(
+      failed > 0
+        ? `${ok} produit(s) supprimé(s). ${failed} non supprimé(s) (liés à des ventes/achats).`
+        : `${ok} produit(s) supprimé(s).`
+    )
+    load()
+  }
 
   if (loading) return <Spinner lg />
 
@@ -83,6 +129,25 @@ export default function Products() {
         </div>
       </div>
 
+      {notice && (
+        <div className="mb-4 text-sm text-neutral-700 bg-primary-50 border border-primary-200 rounded-lg px-4 py-3 flex items-center justify-between">
+          <span>{notice}</span>
+          <button onClick={() => setNotice(null)} className="text-neutral-400 hover:text-neutral-700">✕</button>
+        </div>
+      )}
+
+      {isAdmin && selected.size > 0 && (
+        <div className="mb-4 flex items-center justify-between bg-neutral-900 text-white rounded-lg px-4 py-2.5 animate-fade-in">
+          <span className="text-sm font-medium">{selected.size} produit(s) sélectionné(s)</span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSelected(new Set())} className="text-sm text-neutral-300 hover:text-white px-2">Annuler</button>
+            <button onClick={() => setConfirmOpen(true)} disabled={deleting} className="btn-danger text-sm py-1.5">
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Supprimer la sélection
+            </button>
+          </div>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="card">
           <EmptyState
@@ -98,6 +163,11 @@ export default function Products() {
             <table className="w-full">
               <thead>
                 <tr className="bg-neutral-50 border-b border-neutral-200">
+                  {isAdmin && (
+                    <th className="px-4 py-3 w-10">
+                      <input type="checkbox" className="w-4 h-4 accent-primary-500 cursor-pointer" checked={allShownSelected} onChange={toggleAll} />
+                    </th>
+                  )}
                   <th className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider px-4 py-3">Produit</th>
                   <th className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider px-4 py-3 hidden md:table-cell">SKU</th>
                   <th className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider px-4 py-3 hidden lg:table-cell">Catégorie</th>
@@ -112,7 +182,12 @@ export default function Products() {
                   const margin = Number(p.sale_price) - Number(p.purchase_price)
                   const marginPct = Number(p.purchase_price) > 0 ? (margin / Number(p.purchase_price)) * 100 : 0
                   return (
-                    <tr key={p.id} className="table-row">
+                    <tr key={p.id} className={`table-row ${selected.has(p.id) ? 'bg-primary-50/50' : ''}`}>
+                      {isAdmin && (
+                        <td className="px-4 py-3">
+                          <input type="checkbox" className="w-4 h-4 accent-primary-500 cursor-pointer" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} />
+                        </td>
+                      )}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 overflow-hidden">
@@ -153,6 +228,16 @@ export default function Products() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        title={`Supprimer ${selected.size} produit(s) ?`}
+        message="Les produits sélectionnés et leur stock associé seront définitivement supprimés. Cette action est irréversible."
+        confirmLabel="Supprimer"
+        danger
+      />
     </div>
   )
 }
