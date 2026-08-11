@@ -42,7 +42,7 @@ export default function Dashboard() {
       : undefined
 
     const [stockRes, todaySalesRes, monthSalesRes, boutiquesRes] = await Promise.all([
-      supabase.from('stock_items').select('*, product:products(*), boutique:boutiques(*)').then((r) => r),
+      supabase.from('stock_items').select('*, product:products(*, category:categories(*)), boutique:boutiques(*)').then((r) => r),
       supabase.from('sales').select('*, customer:customers(*), boutique:boutiques(*)').gte('created_at', today.toISOString()).eq('status', 'completed'),
       supabase.from('sales').select('*, customer:customers(*), boutique:boutiques(*), sale_items:sale_items(*, product:products(*))').gte('created_at', monthStart.toISOString()).eq('status', 'completed'),
       supabase.from('boutiques').select('*').eq('is_active', true),
@@ -129,10 +129,13 @@ export default function Dashboard() {
   const categoryChart = useMemo(() => {
     const catMap: Record<string, number> = {}
     stockItems.forEach((s) => {
-      const cat = s.product?.category_id ?? 'Autres'
+      const cat = s.product?.category?.name ?? 'Sans catégorie'
       catMap[cat] = (catMap[cat] ?? 0) + s.quantity * Number(s.product?.purchase_price ?? 0)
     })
-    return Object.entries(catMap).map(([k, v]) => ({ name: k.slice(0, 8), value: v })).slice(0, 7)
+    return Object.entries(catMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 7)
   }, [stockItems])
 
   if (loading) return <Spinner lg />
