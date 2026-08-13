@@ -9,10 +9,11 @@ type PageHeaderProps = {
 
 export function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">{title}</h1>
-        {subtitle && <p className="text-sm text-neutral-500 mt-0.5">{subtitle}</p>}
+        <p className="section-eyebrow mb-1.5">Espace de gestion</p>
+        <h1 className="text-[25px] leading-none font-bold text-neutral-900 tracking-tight">{title}</h1>
+        {subtitle && <p className="text-sm text-neutral-500 mt-2">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
     </div>
@@ -30,26 +31,26 @@ type StatCardProps = {
 
 export function StatCard({ label, value, icon, trend, trendUp, color = 'primary' }: StatCardProps) {
   const colorMap = {
-    primary: 'bg-primary-50 text-primary-600',
-    accent: 'bg-accent-50 text-accent-600',
-    success: 'bg-success-50 text-success-600',
-    warning: 'bg-warning-50 text-warning-600',
-    error: 'bg-error-50 text-error-600',
+    primary: 'bg-primary-50 text-primary-700',
+    accent: 'bg-accent-50 text-accent-700',
+    success: 'bg-success-50 text-success-700',
+    warning: 'bg-warning-50 text-warning-700',
+    error: 'bg-error-50 text-error-700',
   }
   return (
-    <div className="card p-5 animate-fade-in">
+    <div className="metric-card animate-fade-in">
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-neutral-500">{label}</p>
-          <p className="text-2xl font-bold text-neutral-900 mt-1.5">{value}</p>
+        <div className="pl-2">
+          <p className="text-xs font-semibold text-neutral-500">{label}</p>
+          <p className="text-xl font-bold tracking-tight text-neutral-900 mt-1.5">{value}</p>
           {trend && (
-            <p className={cn('text-xs font-medium mt-1.5', trendUp ? 'text-success-600' : 'text-neutral-500')}>
+            <p className={cn('text-[11px] font-medium mt-1.5', trendUp ? 'text-success-600' : 'text-neutral-500')}>
               {trend}
             </p>
           )}
         </div>
         {icon && (
-          <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center', colorMap[color])}>
+          <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center', colorMap[color])}>
             {icon}
           </div>
         )}
@@ -158,3 +159,4 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, confir
     </Modal>
   )
 }
+
